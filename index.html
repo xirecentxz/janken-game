@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JANKEN TACTICS 2026</title>
+    <title>JANKEN HERO TACTICS 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -18,135 +18,169 @@
         body {
             font-family: 'Rajdhani', sans-serif;
             background-color: var(--bg-dark);
-            color: white;
-            height: 100vh;
-            overflow: hidden;
-            display: flex; flex-direction: column;
+            color: white; height: 100vh; overflow: hidden;
         }
 
-        /* --- HOW TO PLAY OVERLAY --- */
+        /* --- SCREEN MANAGEMENT --- */
         .screen {
             position: fixed; inset: 0; display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 1000;
-            background: rgba(10, 10, 12, 0.95);
-            transition: 0.5s;
+            background: radial-gradient(circle at center, #161625 0%, #0a0a0c 100%);
+            transition: 0.5s; text-align: center;
         }
-
         .screen.hidden { opacity: 0; pointer-events: none; transform: scale(1.1); }
 
-        .how-to-card {
+        .glass-card {
             background: var(--glass); backdrop-filter: blur(15px);
             border: 1px solid rgba(255,255,255,0.1);
-            padding: 30px; border-radius: 20px; width: 90%; max-width: 450px;
-            text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            padding: 25px; border-radius: 20px; width: 90%; max-width: 500px;
         }
-
-        .how-to-card ul { text-align: left; margin: 20px 0; font-size: 0.95rem; line-height: 1.6; color: #ccc; }
-        .how-to-card span { color: var(--p1-color); font-weight: bold; }
 
         .btn {
-            padding: 15px 40px; border-radius: 50px; border: none;
+            padding: 12px 25px; border-radius: 50px; border: none;
             font-family: 'Orbitron', sans-serif; font-weight: bold;
-            cursor: pointer; transition: 0.3s; text-transform: uppercase;
-            background: var(--p1-color); color: #000;
+            cursor: pointer; transition: 0.3s; text-transform: uppercase; margin: 10px;
         }
+        .btn-p1 { background: var(--p1-color); color: #000; box-shadow: 0 0 15px rgba(0,210,255,0.4); }
+        .btn-p2 { background: var(--p2-color); color: #fff; box-shadow: 0 0 15px rgba(255,0,88,0.4); }
 
-        /* --- GAME GRID --- */
-        .game-grid {
-            display: grid; grid-template-rows: 1fr 100px 1fr;
-            height: 100vh; width: 100%; filter: blur(0px);
+        /* --- HERO SELECTION --- */
+        .hero-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .hero-opt {
+            background: rgba(255,255,255,0.05); padding: 15px 5px; border-radius: 15px;
+            border: 2px solid transparent; cursor: pointer; transition: 0.3s;
         }
+        .hero-opt:hover { background: rgba(255,255,255,0.1); }
+        .hero-opt.selected { border-color: gold; background: rgba(255,215,0,0.1); }
+        .hero-opt h4 { font-size: 0.8rem; margin-bottom: 5px; color: gold; }
+        .hero-opt p { font-size: 0.65rem; color: #ccc; }
 
+        /* --- GAME UI --- */
+        .game-grid { display: grid; grid-template-rows: 1fr 100px 1fr; height: 100vh; width: 100%; }
         .zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
-        #p2-zone { transform: rotate(180deg); background: linear-gradient(0deg, rgba(255,0,88,0.05) 0%, transparent 100%); }
-        #p1-zone { background: linear-gradient(0deg, rgba(0,210,255,0.05) 0%, transparent 100%); }
-
-        .battle-center {
-            background: #111; border-top: 1px solid #333; border-bottom: 1px solid #333;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-
-        /* --- CARDS --- */
+        #p2-zone { transform: rotate(180deg); }
+        
+        .battle-center { background: #111; border-block: 1px solid #333; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .field { display: flex; gap: 10px; min-height: 110px; }
         
         .card {
             width: 70px; height: 100px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
             font-size: 2rem; background: #1a1a1e; border: 2px solid #444;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: 0.3s; cursor: pointer;
         }
+        .card.p1-active { border-color: var(--p1-color); }
+        .card.p2-active { border-color: var(--p2-color); }
+        .card.selected { transform: translateY(-15px); box-shadow: 0 0 20px var(--p1-color); border-color: white; }
+        .card.hidden-card { background: #222; color: transparent; }
 
-        .card.p1-active { border-color: var(--p1-color); box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); }
-        .card.p2-active { border-color: var(--p2-color); box-shadow: 0 0 15px rgba(255, 0, 88, 0.2); }
-        .card.selected { transform: translateY(-15px); border-width: 4px; box-shadow: 0 0 25px var(--p1-color); }
-        .card.hidden-card { background: #222; color: transparent; border-style: solid; }
+        .badge { font-size: 0.7rem; letter-spacing: 1px; opacity: 0.6; }
+        #log-msg { font-weight: bold; color: var(--p1-color); font-size: 0.9rem; }
 
-        .badge { font-size: 0.7rem; letter-spacing: 2px; opacity: 0.6; margin: 5px; }
-        #log-msg { font-weight: bold; color: var(--p1-color); text-align: center; padding: 5px; }
-
-        .pop-notif {
+        .pop {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 2000; padding: 15px 30px; border-radius: 10px;
-            background: white; color: black; font-weight: bold;
-            display: none; animation: popAnim 0.8s ease-out;
+            z-index: 2000; padding: 10px 20px; border-radius: 10px;
+            background: white; color: black; font-weight: bold; display: none;
         }
-        @keyframes popAnim { 0% { opacity:0; scale:0.5; } 50% { opacity:1; scale:1.2; } 100% { opacity:0; scale:1; } }
     </style>
 </head>
 <body>
 
-    <div id="pop" class="pop-notif">MENANG!</div>
+    <div id="pop" class="pop"></div>
 
-    <div id="menu-screen" class="screen">
-        <div class="how-to-card">
-            <h1 style="color:var(--p1-color); font-family:'Orbitron'">JANKEN TACTICS</h1>
-            <ul>
-                <li><span>1. Deck:</span> Kamu punya 6 kartu (2x Batu, Gunting, Kertas).</li>
-                <li><span>2. Field:</span> 3 kartu akan selalu ada di meja selama stok masih ada.</li>
-                <li><span>3. Attack:</span> Klik kartumu, lalu klik kartu lawan untuk adu mekanik.</li>
-                <li><span>4. Win:</span> Pemainan selesai jika salah satu pemain sisa 3 kartu total.</li>
-            </ul>
-            <button class="btn" onclick="startGame('bot')">MAIN LAWAN BOT</button>
+    <div id="screen-menu" class="screen">
+        <h1 style="color:var(--p1-color); font-family:'Orbitron'; margin-bottom:30px;">JANKEN HERO</h1>
+        <div class="glass-card">
+            <h3>PILIH MODE</h3>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-p1" onclick="chooseMode('pvp')">PLAYER VS PLAYER</button>
+                <button class="btn btn-p2" onclick="chooseMode('bot')">PLAYER VS BOT</button>
+            </div>
         </div>
     </div>
 
-    <div id="game-ui" class="game-grid">
+    <div id="screen-hero" class="screen hidden">
+        <div class="glass-card">
+            <h3 id="hero-title">PLAYER 1: PILIH HERO</h3>
+            <div class="hero-grid">
+                <div class="hero-opt" onclick="pickHero('Tank')">
+                    <h4>🛡️ TANK</h4>
+                    <p>Darah kartu lebih tebal</p>
+                </div>
+                <div class="hero-opt" onclick="pickHero('Mage')">
+                    <h4>🔮 MAGE</h4>
+                    <p>Bisa tukar posisi kartu</p>
+                </div>
+                <div class="hero-opt" onclick="pickHero('Assassin')">
+                    <h4>🗡️ ASSASSIN</h4>
+                    <p>Bisa intip kartu lawan</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-game" class="game-grid hidden">
         <div id="p2-zone" class="zone">
-            <div class="badge">SISA DI TANGAN: <span id="p2-hand-count">3</span></div>
+            <div class="badge">HAND: <span id="p2-hand-count">3</span> | <span id="p2-hero-label">HERO</span></div>
             <div class="field" id="p2-field"></div>
-            <div class="badge" style="opacity:1">AI BOT</div>
+            <div class="badge" id="p2-name-label">PLAYER 2</div>
         </div>
 
         <div class="battle-center">
-            <div id="log-msg">SIAP BERTEMPUR?</div>
-            <div id="turn-txt" class="badge" style="color:white; opacity:1">GILIRAN KAMU</div>
+            <div id="log-msg">SIAP?</div>
+            <div id="turn-txt" class="badge" style="color:white; opacity:1">GILIRAN P1</div>
         </div>
 
         <div id="p1-zone" class="zone">
-            <div class="badge" style="opacity:1">PLAYER 1</div>
+            <div class="badge">PLAYER 1</div>
             <div class="field" id="p1-field"></div>
-            <div class="badge">SISA DI TANGAN: <span id="p1-hand-count">3</span></div>
+            <div class="badge">HAND: <span id="p1-hand-count">3</span> | <span id="p1-hero-label">HERO</span></div>
         </div>
     </div>
 
     <script>
         const ICONS = { rock: '✊', paper: '✋', scissors: '✌️' };
         let state = {
-            p1: { hand: ['rock','rock','paper','paper','scissors','scissors'], field: [] },
-            p2: { hand: ['rock','rock','paper','paper','scissors','scissors'], field: [] },
+            mode: 'bot',
+            phase: 'menu',
+            turn: 'p1',
+            p1: { hero: '', hand: ['rock','rock','paper','paper','scissors','scissors'], field: [] },
+            p2: { hero: '', hand: ['rock','rock','paper','paper','scissors','scissors'], field: [] },
             selectedIdx: null,
             isLocked: false
         };
 
+        function chooseMode(m) {
+            state.mode = m;
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-hero').classList.remove('hidden');
+        }
+
+        function pickHero(h) {
+            if (!state.p1.hero) {
+                state.p1.hero = h;
+                if (state.mode === 'bot') {
+                    state.p2.hero = ['Tank', 'Mage', 'Assassin'][Math.floor(Math.random()*3)];
+                    startGame();
+                } else {
+                    document.getElementById('hero-title').innerText = "PLAYER 2: PILIH HERO";
+                }
+            } else {
+                state.p2.hero = h;
+                startGame();
+            }
+        }
+
         function startGame() {
-            document.getElementById('menu-screen').classList.add('hidden');
-            // Shuffle awal
-            state.p1.hand = state.p1.hand.sort(() => Math.random() - 0.5);
-            state.p2.hand = state.p2.hand.sort(() => Math.random() - 0.5);
-            // Isi field pertama kali
-            refillField('p1');
-            refillField('p2');
+            document.getElementById('screen-hero').classList.add('hidden');
+            document.getElementById('screen-game').style.display = 'grid';
+            document.getElementById('p1-hero-label').innerText = state.p1.hero;
+            document.getElementById('p2-hero-label').innerText = state.p2.hero;
+            document.getElementById('p2-name-label').innerText = state.mode === 'bot' ? "AI BOT" : "PLAYER 2";
+            
+            state.p1.hand.sort(() => Math.random() - 0.5);
+            state.p2.hand.sort(() => Math.random() - 0.5);
+            refillField('p1'); refillField('p2');
             render();
         }
 
@@ -186,7 +220,6 @@
             const p1Card = state.p1.field[state.selectedIdx];
             const p2Card = state.p2.field[targetIdx];
 
-            // Animasi buka kartu lawan
             const targets = document.querySelectorAll('#p2-field .card');
             targets[targetIdx].classList.remove('hidden-card');
             targets[targetIdx].innerText = ICONS[p2Card];
@@ -196,10 +229,10 @@
             setTimeout(() => {
                 if(res === 'p1') {
                     state.p2.field.splice(targetIdx, 1);
-                    showPop("MENANG!");
+                    showPop("P1 MENANG!");
                 } else if(res === 'p2') {
                     state.p1.field.splice(state.selectedIdx, 1);
-                    showPop("KALAH!");
+                    showPop("P1 KALAH!");
                 } else {
                     showPop("SERI!");
                 }
@@ -208,36 +241,24 @@
                 refillField('p1'); refillField('p2');
                 render();
                 
-                // Giliran Bot
-                setTimeout(botMove, 1000);
+                if(state.mode === 'bot') setTimeout(botMove, 1000);
+                else { state.isLocked = false; document.getElementById('log-msg').innerText = "GILIRAN P2!"; }
             }, 800);
         }
 
         function botMove() {
             if(checkGameOver()) return;
-            document.getElementById('log-msg').innerText = "BOT BERPIKIR...";
-            
-            setTimeout(() => {
-                const bIdx = Math.floor(Math.random() * state.p2.field.length);
-                const tIdx = Math.floor(Math.random() * state.p1.field.length);
-                const bCard = state.p2.field[bIdx];
-                const pCard = state.p1.field[tIdx];
+            const bIdx = Math.floor(Math.random() * state.p2.field.length);
+            const tIdx = Math.floor(Math.random() * state.p1.field.length);
+            const res = getWinner(state.p2.field[bIdx], state.p1.field[tIdx]);
 
-                const res = getWinner(bCard, pCard);
-                if(res === 'p1') { // Bot menang
-                    state.p1.field.splice(tIdx, 1);
-                    showPop("BOT MENANG!");
-                } else if(res === 'p2') {
-                    state.p2.field.splice(bIdx, 1);
-                    showPop("BOT KALAH!");
-                }
+            if(res === 'p1') { state.p1.field.splice(tIdx, 1); showPop("BOT MENANG!"); }
+            else if(res === 'p2') { state.p2.field.splice(bIdx, 1); showPop("BOT KALAH!"); }
 
-                refillField('p1'); refillField('p2');
-                render();
-                state.isLocked = false;
-                document.getElementById('log-msg').innerText = "GILIRANMU!";
-                checkGameOver();
-            }, 1000);
+            refillField('p1'); refillField('p2');
+            render();
+            state.isLocked = false;
+            checkGameOver();
         }
 
         function getWinner(c1, c2) {
@@ -247,13 +268,11 @@
         }
 
         function checkGameOver() {
-            const p1Total = state.p1.field.length + state.p1.hand.length;
-            const p2Total = state.p2.field.length + state.p2.hand.length;
-
-            if(p1Total <= 3 || p2Total <= 3) {
-                alert(`GAME OVER! ${p1Total > p2Total ? 'PLAYER 1' : 'BOT'} MENANG!`);
-                location.reload();
-                return true;
+            const p1T = state.p1.field.length + state.p1.hand.length;
+            const p2T = state.p2.field.length + state.p2.hand.length;
+            if(p1T <= 3 || p2T <= 3) {
+                alert(`GAME OVER! ${p1T > p2T ? 'PLAYER 1' : 'LAWAN'} MENANG!`);
+                location.reload(); return true;
             }
             return false;
         }
