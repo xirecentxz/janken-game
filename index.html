@@ -2,625 +2,303 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Janken Hero Tactics (2026 Edition)</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JANKEN HERO TACTICS 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p1-color: #00d2ff;
+            --p2-color: #ff0058;
+            --bg-dark: #0a0a0c;
+            --glass: rgba(255, 255, 255, 0.05);
+            --neon-glow: 0 0 15px rgba(0, 210, 255, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--bg-dark);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- SCREENS --- */
+        .screen {
+            position: fixed; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 100;
+            background: radial-gradient(circle at center, #161625 0%, #0a0a0c 100%);
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s;
+        }
+
+        .screen.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; letter-spacing: 4px; color: var(--p1-color); text-shadow: var(--neon-glow); margin-bottom: 20px; }
+
+        .glass-card {
+            background: var(--glass); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); padding: 25px;
+            border-radius: 20px; text-align: center; max-width: 90%;
+        }
+
+        .btn {
+            padding: 15px 35px; border-radius: 50px; border: none;
+            font-family: 'Orbitron', sans-serif; font-weight: bold;
+            cursor: pointer; transition: 0.3s; margin: 10px; text-transform: uppercase;
+        }
+
+        .btn-p1 { background: var(--p1-color); color: #000; box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); }
+        .btn-p2 { background: var(--p2-color); color: #fff; box-shadow: 0 0 20px rgba(255, 0, 88, 0.4); }
+
+        /* --- GAME LAYOUT --- */
+        .game-grid {
+            display: grid; grid-template-rows: 1fr 100px 1fr;
+            height: 100vh; width: 100%;
+        }
+
+        .zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; position: relative; }
+        #p2-zone { transform: rotate(180deg); border-bottom: 1px solid rgba(255,0,88,0.2); }
+        #p1-zone { border-top: 1px solid rgba(0,210,255,0.2); }
+
+        .battle-info {
+            background: #111; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 5;
+            border-top: 2px solid #333; border-bottom: 2px solid #333;
+        }
+
+        /* --- CARDS --- */
+        .field { display: flex; gap: 12px; }
+        
+        .card {
+            width: 70px; height: 100px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; background: #1a1a1a; border: 2px solid #333;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer; position: relative;
+        }
+
+        .card.p1-side { border-color: var(--p1-color); box-shadow: inset 0 0 10px rgba(0,210,255,0.2); }
+        .card.p2-side { border-color: var(--p2-color); box-shadow: inset 0 0 10px rgba(255,0,88,0.2); }
+
+        .card.selected { transform: scale(1.1) translateY(-10px); border-width: 4px; box-shadow: 0 0 20px var(--p1-color); }
+        .card.hidden-card { background: repeating-linear-gradient(45deg, #222, #222 10px, #2a2a2a 10px, #2a2a2a 20px); color: transparent; }
+
+        .status-tag { font-size: 0.8rem; letter-spacing: 2px; opacity: 0.7; font-weight: bold; }
+        
+        #log-text { font-size: 0.9rem; color: #00ffcc; text-align: center; padding: 0 10px; }
+
+        .floating-notif {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9); padding: 20px 40px; border-radius: 50px;
+            border: 2px solid gold; z-index: 200; pointer-events: none;
+            animation: popIn 0.5s forwards; display: none;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            80% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
 </head>
 <body>
 
-    <div id="main-menu" class="screen active">
-        <h1 class="game-title">JANKEN HERO TACTICS</h1>
-        <div class="how-to-play card-neon-border">
-            <h3>Cara Bermain:</h3>
-            <ul>
-                <li>Pilih <span class="highlight">Hero</span> dengan skill unik.</li>
-                <li>Setiap Hero punya 6 Kartu (2x Batu, Gunting, Kertas).</li>
-                <li><b>Standby Phase:</b> Atur 3 kartu secara rahasia di <span class="highlight">Field</span>.</li>
-                <li><b>Battle Phase:</b> Pilih kartumu, lalu serang kartu lawan!</li>
-                <li><b>Win Condition:</b> Kartu lawan habis = Kemenangan!</li>
-            </ul>
-            <p class="attention">Penting: Jika bermain PvP di 1 device, Player lawan harus menutup mata saat giliran Anda!</p>
-        </div>
-        <div class="btn-group">
-            <button class="game-btn btn-pvp" onclick="showHeroSelection('PvP')">PLAYER VS PLAYER</button>
-            <button class="game-btn btn-bot" onclick="showHeroSelection('Bot')">PLAYER VS BOT</button>
+    <div id="popup" class="floating-notif">MENANG!</div>
+
+    <div id="screen-menu" class="screen">
+        <h1>JANKEN TACTICS</h1>
+        <div class="glass-card">
+            <p>6 Kartu per Deck | Strategi Blind Janken</p>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-p1" onclick="initGame('pvp')">1 VS 1 (Lokal)</button>
+                <button class="btn btn-p2" onclick="initGame('bot')">Lawan BOT</button>
+            </div>
         </div>
     </div>
 
-    <div id="hero-selection" class="screen">
-        <h2 class="section-title">Pilih Hero Anda</h2>
-        <div class="hero-selection-grid">
-            <div class="player-hero-selection" id="p1-hero-select">
-                <h3 class="player-tag p1">PLAYER 1</h3>
-                <div class="hero-cards-container">
-                    <div class="hero-card" data-hero="tank" onclick="selectHero('p1', 'tank')">
-                        <img src="https://via.placeholder.com/100x120/FF5733/FFFFFF?text=TANK" alt="Tank Hero" class="hero-image">
-                        <h4 class="hero-name">Guardian</h4>
-                        <p class="hero-skill">Skill: <span class="highlight">Iron Shield</span><br>Kartu tidak langsung hancur jika kalah pertama kali.</p>
-                        <div class="selection-overlay">Dipilih!</div>
-                    </div>
-                    <div class="hero-card" data-hero="mage" onclick="selectHero('p1', 'mage')">
-                        <img src="https://via.placeholder.com/100x120/3366FF/FFFFFF?text=MAGE" alt="Mage Hero" class="hero-image">
-                        <h4 class="hero-name">Sorcerer</h4>
-                        <p class="hero-skill">Skill: <span class="highlight">Illusion</span><br>Tukar posisi 2 kartu di Field 1x.</p>
-                        <div class="selection-overlay">Dipilih!</div>
-                    </div>
-                    <div class="hero-card" data-hero="assassin" onclick="selectHero('p1', 'assassin')">
-                        <img src="https://via.placeholder.com/100x120/33FF57/FFFFFF?text=ASSASSIN" alt="Assassin Hero" class="hero-image">
-                        <h4 class="hero-name">Shadow</h4>
-                        <p class="hero-skill">Skill: <span class="highlight">Eagle Eye</span><br>Intip 1 kartu lawan sebelum menyerang 1x.</p>
-                        <div class="selection-overlay">Dipilih!</div>
-                    </div>
+    <div id="screen-game" class="game-grid">
+        <div id="p2-zone" class="zone">
+            <div class="status-tag" id="p2-label">PLAYER 2</div>
+            <div class="field" id="p2-field">
                 </div>
-            </div>
+            <div class="status-tag">SISA KARTU: <span id="p2-count">6</span></div>
+        </div>
 
-            <div class="player-hero-selection" id="p2-hero-select">
-                <h3 class="player-tag p2" id="p2-tag">PLAYER 2</h3>
-                <div class="hero-cards-container">
-                    <div class="hero-card" data-hero="tank" onclick="selectHero('p2', 'tank')">
-                        <img src="https://via.placeholder.com/100x120/FF5733/FFFFFF?text=TANK" alt="Tank Hero" class="hero-image">
-                        <h4 class="hero-name">Guardian</h4>
-                        <p class="hero-skill">Skill: <span class="highlight">Iron Shield</span></p>
-                        <div class="selection-overlay">Dipilih!</div>
-                    </div>
-                    <div class="hero-card" data-hero="mage" onclick="selectHero('p2', 'mage')">
-                        <img src="https://via.placeholder.com/100x120/3366FF/FFFFFF?text=MAGE" alt="Mage Hero" class="hero-image">
-                        <h4 class="hero-name">Sorcerer</h4>
-                        <p class="hero-skill">Skill: <span class="highlight">Illusion</span></p>
-                        <div class="selection-overlay">Dipilih!</div>
-                    </div>
-                    <div class="hero-card" data-hero="assassin" onclick="selectHero('p2', 'assassin')">
-                        <img src="https://via.placeholder.com/100x120/33FF57/FFFFFF?text=ASSASSIN" alt="Assassin Hero" class="hero-image">
-                        <h4 class="hero-name">Shadow</h4>
-                        <p class="hero-skill">Skill: <span class="highlight">Eagle Eye</span></p>
-                        <div class="selection-overlay">Dipilih!</div>
-                    </div>
+        <div class="battle-info">
+            <div id="log-text">PILIH KARTUMU UNTUK MENYERANG!</div>
+            <div id="turn-indicator" style="font-weight: bold; margin-top: 5px; color: var(--p1-color);">GILIRAN P1</div>
+        </div>
+
+        <div id="p1-zone" class="zone">
+            <div class="status-tag">SISA KARTU: <span id="p1-count">6</span></div>
+            <div class="field" id="p1-field">
                 </div>
-            </div>
+            <div class="status-tag">PLAYER 1</div>
         </div>
-        <button class="game-btn start-game-btn" onclick="startGame()" disabled>MULAI PERTANDINGAN</button>
-    </div>
-
-    <div id="intermission-screen" class="screen">
-        <h2 class="section-title">PERHATIAN!</h2>
-        <p class="intermission-text" id="intermission-message"></p>
-        <button class="game-btn" onclick="continueGame()">SAYA SIAP!</button>
-    </div>
-
-    <div id="game-ui" class="screen">
-        <div id="p2-area" class="player-area">
-            <div class="player-info">
-                <span class="player-tag p2">PLAYER 2 / BOT</span>
-                <span class="hero-name-display" id="p2-hero-display"></span>
-            </div>
-            <div class="field-container p2-field">
-                <div class="card-slot" data-slot="0"></div>
-                <div class="card-slot" data-slot="1"></div>
-                <div class="card-slot" data-slot="2"></div>
-            </div>
-        </div>
-
-        <div id="battle-field">
-            <div class="battle-log">
-                <h3>LOG PERTARUNGAN</h3>
-                <ul id="log-list">
-                    </ul>
-            </div>
-            <div class="turn-indicator" id="turn-indicator">GILIRAN PLAYER 1</div>
-        </div>
-
-        <div id="p1-area" class="player-area">
-            <div class="field-container p1-field">
-                <div class="card-slot" data-slot="0"></div>
-                <div class="card-slot" data-slot="1"></div>
-                <div class="card-slot" data-slot="2"></div>
-            </div>
-            <div class="player-info">
-                <span class="player-tag p1">PLAYER 1</span>
-                <span class="hero-name-display" id="p1-hero-display"></span>
-            </div>
-        </div>
-
-        <div id="p1-hand-selection" class="player-hand-overlay">
-            <h3 class="selection-title">Pilih 3 Kartu Untuk Field Anda</h3>
-            <div class="hand-cards-container">
-                </div>
-            <button class="game-btn confirm-selection-btn" onclick="confirmHandSelection()" disabled>KONFIRMASI</button>
-        </div>
-
-        <div id="p2-hand-selection" class="player-hand-overlay">
-            <h3 class="selection-title">Pilih 3 Kartu Untuk Field Anda</h3>
-            <div class="hand-cards-container">
-                </div>
-            <button class="game-btn confirm-selection-btn" onclick="confirmHandSelection()" disabled>KONFIRMASI</button>
-        </div>
-
     </div>
 
     <script>
-        // --- GAME STATE ---
-        let gameState = {
-            mode: null, // 'PvP' or 'Bot'
-            turn: 'p1', // 'p1' or 'p2'
-            phase: 'heroSelection', // 'heroSelection', 'p1HandSelect', 'p2HandSelect', 'battle', 'intermission'
-            p1: {
-                hero: null,
-                deck: [], // Full deck of 6 cards
-                hand: [], // 6 cards at start (same as deck)
-                field: [], // 3 cards on field
-                graveyard: [],
-                score: 3, // How many slots left on field (initial 3)
-            },
-            p2: {
-                hero: null,
-                deck: [],
-                hand: [],
-                field: [],
-                graveyard: [],
-                score: 3,
-            },
-            selectedCardsForField: [], // Temporary storage for 3 card selection
-            attackingCard: null,
-            targetCardSlot: null,
+        const ICONS = { rock: '✊', paper: '✋', scissors: '✌️' };
+        let state = {
+            mode: 'pvp',
+            turn: 'p1',
+            p1: { deck: ['rock','rock','paper','paper','scissors','scissors'], field: [], total: 6 },
+            p2: { deck: ['rock','rock','paper','paper','scissors','scissors'], field: [], total: 6 },
+            selectedIdx: null,
+            isProcessing: false
         };
 
-        const HEROES_DATA = {
-            tank: { name: "Guardian", skill: "Iron Shield", description: "Kartu tidak langsung hancur jika kalah pertama kali." },
-            mage: { name: "Sorcerer", skill: "Illusion", description: "Tukar posisi 2 kartu di Field 1x." },
-            assassin: { name: "Shadow", skill: "Eagle Eye", description: "Intip 1 kartu lawan sebelum menyerang 1x." },
-        };
-
-        const CARD_TYPES = ['rock', 'rock', 'paper', 'paper', 'scissors', 'scissors']; // 2 of each Janken type
-
-        // --- UTILITY FUNCTIONS ---
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
+        function initGame(mode) {
+            state.mode = mode;
+            document.getElementById('screen-menu').classList.add('hidden');
+            if(mode === 'bot') document.getElementById('p2-label').innerText = "AI BOT";
+            setupRound();
         }
 
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
-            document.getElementById(screenId).classList.add('active');
+        function setupRound() {
+            // Sesuai aturan: Standby phase pilih 3 kartu (simulasi acak untuk awal)
+            state.p1.field = shuffle([...state.p1.deck]).slice(0, 3);
+            state.p2.field = shuffle([...state.p2.deck]).slice(0, 3);
+            renderField();
         }
 
-        function updateLog(message) {
-            const logList = document.getElementById('log-list');
-            const newItem = document.createElement('li');
-            newItem.textContent = message;
-            logList.prepend(newItem); // Add to top
-            if (logList.children.length > 5) { // Keep only last 5 logs
-                logList.removeChild(logList.lastChild);
-            }
-        }
+        function renderField() {
+            const p1Container = document.getElementById('p1-field');
+            const p2Container = document.getElementById('p2-field');
+            p1Container.innerHTML = ''; p2Container.innerHTML = '';
 
-        // --- GAME LOGIC FUNCTIONS ---
-
-        function showHeroSelection(mode) {
-            gameState.mode = mode;
-            updateLog(`Mode dipilih: ${mode}`);
-            showScreen('hero-selection');
-
-            // Reset selections
-            document.querySelectorAll('.hero-card').forEach(card => card.classList.remove('selected'));
-            document.querySelector('.start-game-btn').disabled = true;
-            gameState.p1.hero = null;
-            gameState.p2.hero = null;
-
-            if (mode === 'Bot') {
-                document.getElementById('p2-tag').textContent = 'BOT';
-                // Automatically select a hero for Bot
-                const botHeroes = ['tank', 'mage', 'assassin'];
-                const randomHeroType = botHeroes[Math.floor(Math.random() * botHeroes.length)];
-                selectHero('p2', randomHeroType, true); // true for bot selection
-            } else {
-                document.getElementById('p2-tag').textContent = 'PLAYER 2';
-            }
-        }
-
-        function selectHero(player, heroType, isBot = false) {
-            const playerSelector = player === 'p1' ? '#p1-hero-select' : '#p2-hero-select';
-            const container = document.querySelector(playerSelector + ' .hero-cards-container');
-
-            // Deselect previous hero
-            container.querySelectorAll('.hero-card').forEach(card => card.classList.remove('selected'));
-
-            // Select new hero
-            const selectedHeroCard = container.querySelector(`[data-hero="${heroType}"]`);
-            if (selectedHeroCard) {
-                selectedHeroCard.classList.add('selected');
-                gameState[player].hero = HEROES_DATA[heroType];
-                updateLog(`${player === 'p1' ? 'Player 1' : 'Player 2'} memilih Hero: ${gameState[player].hero.name}`);
-            }
-
-            checkStartGameButton();
-        }
-
-        function checkStartGameButton() {
-            const startBtn = document.querySelector('.start-game-btn');
-            if (gameState.p1.hero && (gameState.mode === 'Bot' || gameState.p2.hero)) {
-                startBtn.disabled = false;
-            } else {
-                startBtn.disabled = true;
-            }
-        }
-
-        function startGame() {
-            if (!gameState.p1.hero || (gameState.mode === 'PvP' && !gameState.p2.hero)) {
-                alert('Pilih Hero terlebih dahulu untuk kedua pemain!');
-                return;
-            }
-
-            // Initialize player decks and hands
-            gameState.p1.deck = shuffleArray([...CARD_TYPES]);
-            gameState.p1.hand = [...gameState.p1.deck]; // All cards are in hand at start
-            gameState.p1.score = 3; // Reset score
-            document.getElementById('p1-hero-display').textContent = gameState.p1.hero.name;
-
-            gameState.p2.deck = shuffleArray([...CARD_TYPES]);
-            gameState.p2.hand = [...gameState.p2.deck];
-            gameState.p2.score = 3;
-            document.getElementById('p2-hero-display').textContent = gameState.p2.hero.name;
-
-            // Clear fields visually
-            document.querySelectorAll('.p1-field .card-slot').forEach(slot => slot.innerHTML = '');
-            document.querySelectorAll('.p2-field .card-slot').forEach(slot => slot.innerHTML = '');
-
-
-            showScreen('game-ui');
-            startHandSelection('p1');
-        }
-
-        function startHandSelection(player) {
-            gameState.phase = player === 'p1' ? 'p1HandSelect' : 'p2HandSelect';
-            gameState.selectedCardsForField = []; // Reset selected cards
-
-            const handOverlay = document.getElementById(`${player}-hand-selection`);
-            const handContainer = handOverlay.querySelector('.hand-cards-container');
-            handContainer.innerHTML = ''; // Clear previous cards
-
-            // Show player's hand
-            gameState[player].hand.forEach((cardType, index) => {
-                const cardDiv = document.createElement('div');
-                cardDiv.classList.add('card', cardType); // Add card type for styling
-                cardDiv.dataset.type = cardType;
-                cardDiv.dataset.index = index; // Keep original index in hand
-                cardDiv.onclick = () => toggleSelectCardForField(player, cardDiv);
-                handContainer.appendChild(cardDiv);
+            // Render Player 1 (Face Up)
+            state.p1.field.forEach((card, i) => {
+                const el = document.createElement('div');
+                el.className = `card p1-side ${state.selectedIdx === i ? 'selected' : ''}`;
+                el.innerText = ICONS[card];
+                el.onclick = () => selectCard(i);
+                p1Container.appendChild(el);
             });
 
-            // Adjust visibility based on player
-            if (player === 'p1') {
-                handOverlay.classList.add('active');
-                document.getElementById('p2-area').classList.remove('rotated-view'); // Ensure p2 area is not rotated for p1's view
-            } else { // p2 selection
-                if (gameState.mode === 'PvP') {
-                    // Intermission for PvP
-                    document.getElementById('intermission-message').textContent = `Sekarang giliran Player 2 memilih kartu! Player 1 harap tidak melihat.`;
-                    showScreen('intermission-screen');
-                    // We'll show P2's hand selection after intermission continues
-                } else { // Bot selection
-                    handOverlay.classList.remove('active'); // Bot doesn't need UI hand
-                    botSelectHand();
-                }
-            }
-            updateConfirmButton(player);
-        }
-
-        function toggleSelectCardForField(player, cardDiv) {
-            const cardType = cardDiv.dataset.type;
-            const cardIndex = parseInt(cardDiv.dataset.index);
-
-            const existingIndex = gameState.selectedCardsForField.findIndex(c => c.index === cardIndex);
-
-            if (existingIndex > -1) {
-                // Deselect
-                gameState.selectedCardsForField.splice(existingIndex, 1);
-                cardDiv.classList.remove('selected');
-            } else {
-                // Select
-                if (gameState.selectedCardsForField.length < 3) {
-                    gameState.selectedCardsForField.push({ type: cardType, index: cardIndex });
-                    cardDiv.classList.add('selected');
-                } else {
-                    alert('Anda hanya bisa memilih 3 kartu untuk Field.');
-                }
-            }
-            updateConfirmButton(player);
-        }
-
-        function updateConfirmButton(player) {
-            const confirmBtn = document.getElementById(`${player}-hand-selection`).querySelector('.confirm-selection-btn');
-            confirmBtn.disabled = gameState.selectedCardsForField.length !== 3;
-        }
-
-        function confirmHandSelection() {
-            const currentPlayer = gameState.phase === 'p1HandSelect' ? 'p1' : 'p2';
-            const selectedCards = gameState.selectedCardsForField.map(c => c.type); // Just the types
-
-            // Remove selected cards from hand
-            // This is tricky if original indices are used. Better to re-create hand.
-            const remainingHand = gameState[currentPlayer].hand.filter((card, index) =>
-                !gameState.selectedCardsForField.some(c => c.index === index)
-            );
-            gameState[currentPlayer].hand = remainingHand;
-            gameState[currentPlayer].field = selectedCards;
-
-            updateLog(`${currentPlayer === 'p1' ? 'Player 1' : 'Player 2'} telah menempatkan kartu di Field.`);
-
-            // Hide the hand selection overlay
-            document.getElementById(`${currentPlayer}-hand-selection`).classList.remove('active');
-
-            // Update field visually (initially face down)
-            const fieldSlots = document.querySelectorAll(`.${currentPlayer}-field .card-slot`);
-            gameState[currentPlayer].field.forEach((cardType, index) => {
-                const cardDiv = document.createElement('div');
-                cardDiv.classList.add('card', 'face-down'); // Face down initially
-                // For PvP, actual type isn't shown until battle. For bot, we might know.
-                // cardDiv.dataset.type = cardType; // Don't expose type for face-down card
-                fieldSlots[index].innerHTML = ''; // Clear existing
-                fieldSlots[index].appendChild(cardDiv);
+            // Render Player 2 (Face Down/Hidden)
+            state.p2.field.forEach((card, i) => {
+                const el = document.createElement('div');
+                el.className = `card p2-side hidden-card`;
+                el.innerText = '?';
+                el.onclick = () => attackTarget(i);
+                p2Container.appendChild(el);
             });
 
-
-            if (gameState.phase === 'p1HandSelect') {
-                // Now P2's turn to select hand
-                if (gameState.mode === 'PvP') {
-                    // Show intermission for P2
-                    document.getElementById('intermission-message').textContent = `Sekarang giliran Player 2 memilih kartu! Player 1 harap tidak melihat.`;
-                    showScreen('intermission-screen');
-                    gameState.phase = 'intermissionP1toP2';
-                } else { // Bot mode, bot selects hand immediately
-                    botSelectHand();
-                }
-            } else { // P2 (or Bot) hand selection finished
-                // Both players have selected their hand, start Battle Phase
-                startGameRound();
-            }
+            document.getElementById('p1-count').innerText = state.p1.total;
+            document.getElementById('p2-count').innerText = state.p2.total;
         }
 
-        function botSelectHand() {
-            // Simple bot: pick first 3 cards from hand
-            const botHand = shuffleArray([...gameState.p2.hand]); // Shuffle bot's hand for variety
-            gameState.p2.field = botHand.slice(0, 3);
-            gameState.p2.hand = botHand.slice(3); // Remaining 3 cards
-
-            updateLog("Bot telah menempatkan kartu di Field.");
-
-            const fieldSlots = document.querySelectorAll(`.p2-field .card-slot`);
-            gameState.p2.field.forEach((cardType, index) => {
-                const cardDiv = document.createElement('div');
-                cardDiv.classList.add('card', 'face-down');
-                fieldSlots[index].innerHTML = '';
-                fieldSlots[index].appendChild(cardDiv);
-            });
-
-            startGameRound();
+        function selectCard(i) {
+            if(state.turn !== 'p1' || state.isProcessing) return;
+            state.selectedIdx = i;
+            document.getElementById('log-text').innerText = "KARTU DIPILIH! SEKARANG PILIH KARTU LAWAN.";
+            renderField();
         }
 
-        function continueGame() {
-            if (gameState.phase === 'intermissionP1toP2') {
-                showScreen('game-ui'); // Back to game UI
-                // Rotate view for P2 if needed (handled by CSS for .player-area)
-                // Now start P2's hand selection
-                startHandSelection('p2');
-            } else if (gameState.phase === 'intermissionBattle') {
-                 // This would be for turn transitions during battle phase if needed
-                 showScreen('game-ui');
-                 startBattlePhase();
-            }
-        }
+        function attackTarget(targetIdx) {
+            if(state.selectedIdx === null || state.isProcessing) return;
+            state.isProcessing = true;
+            
+            const p1Card = state.p1.field[state.selectedIdx];
+            const p2Card = state.p2.field[targetIdx];
 
-        function startGameRound() {
-            gameState.phase = 'battle';
-            gameState.turn = 'p1'; // P1 always starts the battle phase
-            updateTurnIndicator();
-            updateLog("Pertarungan dimulai! Giliran Player 1 menyerang.");
-            startBattlePhase();
-        }
+            // Animasi Buka Kartu Lawan
+            const p2Cards = document.querySelectorAll('#p2-field .card');
+            p2Cards[targetIdx].classList.remove('hidden-card');
+            p2Cards[targetIdx].innerText = ICONS[p2Card];
 
-        function updateTurnIndicator() {
-            document.getElementById('turn-indicator').textContent = `GILIRAN ${gameState.turn.toUpperCase()}`;
-            if (gameState.turn === 'p1') {
-                document.getElementById('turn-indicator').classList.remove('p2-turn');
-                document.getElementById('turn-indicator').classList.add('p1-turn');
-            } else {
-                document.getElementById('turn-indicator').classList.remove('p1-turn');
-                document.getElementById('turn-indicator').classList.add('p2-turn');
-            }
-        }
-
-        function startBattlePhase() {
-            // Make player's own field cards clickable to select for attack
-            const currentPlayer = gameState.turn;
-            const opponentPlayer = currentPlayer === 'p1' ? 'p2' : 'p1';
-
-            // Reset selections
-            gameState.attackingCard = null;
-            gameState.targetCardSlot = null;
-
-            // Clear previous click handlers on both fields
-            document.querySelectorAll('.p1-field .card-slot, .p2-field .card-slot').forEach(slot => {
-                slot.onclick = null;
-                slot.classList.remove('selectable', 'selected-attack', 'selected-target');
-            });
-
-            // Make current player's own field cards selectable for attack
-            document.querySelectorAll(`.${currentPlayer}-field .card-slot`).forEach((slot, index) => {
-                if (gameState[currentPlayer].field[index]) { // If card exists in slot
-                    slot.classList.add('selectable');
-                    slot.onclick = () => selectAttackingCard(slot, index);
-                }
-            });
-
-            // If it's Bot's turn
-            if (gameState.mode === 'Bot' && currentPlayer === 'p2') {
-                setTimeout(botAttack, 1500); // Give a small delay for bot
-            }
-        }
-
-        function selectAttackingCard(slot, index) {
-            document.querySelectorAll('.selected-attack').forEach(s => s.classList.remove('selected-attack'));
-            slot.classList.add('selected-attack');
-            gameState.attackingCard = { type: gameState[gameState.turn].field[index], slotIndex: index };
-
-            // Now make opponent's field cards targetable
-            const opponentPlayer = gameState.turn === 'p1' ? 'p2' : 'p1';
-            document.querySelectorAll(`.${opponentPlayer}-field .card-slot`).forEach((targetSlot, targetIndex) => {
-                if (gameState[opponentPlayer].field[targetIndex]) { // If card exists
-                    targetSlot.classList.add('selectable'); // Add selectable style for targets
-                    targetSlot.onclick = () => selectTargetCard(targetSlot, targetIndex);
-                }
-            });
-            updateLog(`${gameState.turn.toUpperCase()} memilih kartu untuk menyerang. Pilih target lawan!`);
-        }
-
-        function selectTargetCard(slot, index) {
-            if (!gameState.attackingCard) {
-                alert('Pilih kartu penyerang Anda terlebih dahulu!');
-                return;
-            }
-            document.querySelectorAll('.selected-target').forEach(s => s.classList.remove('selected-target'));
-            slot.classList.add('selected-target');
-            gameState.targetCardSlot = index;
-
-            // Execute battle after a short delay for visual feedback
-            setTimeout(executeBattle, 800);
-        }
-
-        function botAttack() {
-            const botPlayer = 'p2';
-            const humanPlayer = 'p1';
-
-            // Bot randomly picks one of its cards to attack
-            const availableBotCards = gameState[botPlayer].field.map((card, idx) => ({ type: card, slotIndex: idx }))
-                                        .filter(card => card.type !== undefined);
-            const attackingCard = availableBotCards[Math.floor(Math.random() * availableBotCards.length)];
-            gameState.attackingCard = attackingCard;
-
-            // Visually select bot's attacking card (rotated)
-            const botAttackingSlot = document.querySelectorAll('.p2-field .card-slot')[attackingCard.slotIndex];
-            botAttackingSlot.classList.add('selected-attack');
-
-            // Bot randomly picks one of human player's cards to target
-            const availableHumanCards = gameState[humanPlayer].field.map((card, idx) => ({ type: card, slotIndex: idx }))
-                                            .filter(card => card.type !== undefined);
-            const targetCard = availableHumanCards[Math.floor(Math.random() * availableHumanCards.length)];
-            gameState.targetCardSlot = targetCard.slotIndex;
-
-            // Visually select human player's target card
-            const humanTargetSlot = document.querySelectorAll('.p1-field .card-slot')[targetCard.slotIndex];
-            humanTargetSlot.classList.add('selected-target');
-
-            updateLog("Bot sedang menyerang...");
-            setTimeout(executeBattle, 1500);
-        }
-
-        function executeBattle() {
-            const attacker = gameState.turn;
-            const defender = attacker === 'p1' ? 'p2' : 'p1';
-
-            const attackerCardType = gameState.attackingCard.type;
-            const attackerSlotIndex = gameState.attackingCard.slotIndex;
-            const defenderCardType = gameState[defender].field[gameState.targetCardSlot];
-            const defenderSlotIndex = gameState.targetCardSlot;
-
-            const attackerSlotEl = document.querySelectorAll(`.${attacker}-field .card-slot`)[attackerSlotIndex];
-            const defenderSlotEl = document.querySelectorAll(`.${defender}-field .card-slot`)[defenderSlotIndex];
-
-            // Reveal cards visually
-            attackerSlotEl.innerHTML = `<div class="card ${attackerCardType} face-up animate-flip-in"></div>`;
-            defenderSlotEl.innerHTML = `<div class="card ${defenderCardType} face-up animate-flip-in"></div>`;
-
-            updateLog(`${attacker.toUpperCase()} menyerang dengan ${attackerCardType.toUpperCase()} ke kartu ${defender.toUpperCase()}!`);
-
+            const result = getWinner(p1Card, p2Card);
+            
             setTimeout(() => {
-                const result = getJankenResult(attackerCardType, defenderCardType);
-                let message = "";
-
-                if (result === 'win') {
-                    message = `${attacker.toUpperCase()} MENANG! Kartu ${defender.toUpperCase()} hancur!`;
-                    updateLog(message);
-                    // Remove defender's card
-                    gameState[defender].field[defenderSlotIndex] = undefined; // Mark as empty
-                    gameState[defender].graveyard.push(defenderCardType);
-                    defenderSlotEl.innerHTML = '<div class="card-graveyard animate-sink">GRAVEYARD</div>';
-                    gameState[defender].score--; // Reduce score
-                } else if (result === 'lose') {
-                    message = `${attacker.toUpperCase()} KALAH! Kartu ${attacker.toUpperCase()} hancur!`;
-                    updateLog(message);
-                    // Remove attacker's card
-                    gameState[attacker].field[attackerSlotIndex] = undefined;
-                    gameState[attacker].graveyard.push(attackerCardType);
-                    attackerSlotEl.innerHTML = '<div class="card-graveyard animate-sink">GRAVEYARD</div>';
-                    gameState[attacker].score--; // Reduce score
-                } else { // Draw
-                    message = "IMBANG! Kartu kembali tertutup, giliran berpindah.";
-                    updateLog(message);
-                    // Cards stay, flip back face-down after a short delay
-                    setTimeout(() => {
-                        attackerSlotEl.innerHTML = `<div class="card face-down animate-flip-out"></div>`;
-                        defenderSlotEl.innerHTML = `<div class="card face-down animate-flip-out"></div>`;
-                    }, 1000);
-                }
-
-                // Clean up selection styles
-                document.querySelectorAll('.selected-attack, .selected-target').forEach(s => s.classList.remove('selected-attack', 'selected-target'));
-
-                setTimeout(() => {
-                    checkGameEnd();
-                    // Switch turn only if game is not over
-                    if (gameState.phase !== 'gameOver') {
-                        gameState.turn = attacker === 'p1' ? 'p2' : 'p1';
-                        updateTurnIndicator();
-                        updateLog(`Giliran ${gameState.turn.toUpperCase()} untuk menyerang.`);
-                        startBattlePhase(); // Start next player's battle phase
-                    }
-                }, 2000); // Delay for user to read result
-            }, 1500); // Delay to see cards flip
+                resolveBattle(result, state.selectedIdx, targetIdx);
+            }, 1200);
         }
 
-        function getJankenResult(card1, card2) {
-            if (card1 === card2) return 'draw';
-            if (
-                (card1 === 'rock' && card2 === 'scissors') ||
-                (card1 === 'scissors' && card2 === 'paper') ||
-                (card1 === 'paper' && card2 === 'rock')
-            ) {
-                return 'win'; // card1 wins
+        function resolveBattle(result, sIdx, tIdx) {
+            if(result === 'p1') {
+                showNotif("P1 MENANG!");
+                state.p2.field.splice(tIdx, 1);
+                state.p2.total--;
+            } else if(result === 'p2') {
+                showNotif("P1 KALAH!");
+                state.p1.field.splice(sIdx, 1);
+                state.p1.total--;
+            } else {
+                showNotif("SERI!");
             }
-            return 'lose'; // card1 loses
+
+            state.selectedIdx = null;
+            checkGameOver();
+            
+            if(state.mode === 'bot') {
+                state.isProcessing = true;
+                setTimeout(botTurn, 1500);
+            } else {
+                state.isProcessing = false;
+                renderField();
+            }
         }
 
-        function checkGameEnd() {
-            if (gameState.p1.score <= 3) { // Assuming 3 slots empty means player loses (or 3 cards left means player loses)
-                // Refine win condition: game ends if *either* player has <= 3 cards.
-                // If a player has only 3 cards *remaining* (meaning 3 are gone) they lose.
-                // Let's use `field.filter(c => c !== undefined).length` to count active cards
-                const p1ActiveCards = gameState.p1.field.filter(c => c !== undefined).length;
-                const p2ActiveCards = gameState.p2.field.filter(c => c !== undefined).length;
+        function botTurn() {
+            if(state.p2.field.length === 0) return;
+            const botIdx = Math.floor(Math.random() * state.p2.field.length);
+            const targetIdx = Math.floor(Math.random() * state.p1.field.length);
+            
+            const botCard = state.p2.field[botIdx];
+            const p1Card = state.p1.field[targetIdx];
 
-                if (p1ActiveCards <= 3 || p2ActiveCards <= 3) {
-                     // This condition is wrong if original logic meant "3 cards *left*"
-                     // Let's assume the rule "permainan selesai jika salah 1 player sisa 3 kartu"
-                     // means they started with 6, now have 3, so 3 are gone.
-                     // A cleaner way: If a player's field is empty, they lose.
-                     // Or, if number of active cards < 3, they lose.
-                    // For now, if p1ActiveCards is 0 or 1, that player loses.
-                    // Let's stick to your original rule: if a player *remaining* cards are 3 or less, that player loses.
-                    // This means if a player's field (initially 3 slots) has less than 3 active cards, they are losing.
-                    // The winner is the one with MORE cards left.
-                    let winner = null;
-                    if (p1ActiveCards === 0) winner = 'p2';
-                    if (p2ActiveCards === 0) winner = 'p1';
+            document.getElementById('log-text').innerText = "BOT MENYERANG!";
+            
+            setTimeout(() => {
+                const res = getWinner(botCard, p1Card);
+                if(res === 'p1') { // Di sini p1 maksudnya penyerang (bot)
+                    state.p1.field.splice(targetIdx, 1);
+                    state.p1.total--;
+                    showNotif("BOT MENANG!");
+                } else if (res === 'p2') { // Bot kalah
+                    state.p2.field.splice(botIdx, 1);
+                    state.p2.total--;
+                    showNotif("BOT KALAH!");
+                }
+                
+                state.isProcessing = false;
+                checkGameOver();
+                renderField();
+            }, 1000);
+        }
 
-                    if (p1ActiveCards > p2ActiveCards && p2ActiveCards < 3) winner = 'p1';
-                    else if (p2ActiveCards > p1ActiveCards && p1ActiveCards < 3) winner = 'p2';
-                    else if (p1ActiveCards === p2ActiveCards && (p1ActiveCards < 3 || p2ActiveCards < 3)) winner = 'draw'; // Both hit
+        function getWinner(c1, c2) {
+            if(c1 === c2) return 'draw';
+            if((c1==='rock' && c2==='scissors') || (c1==='scissors' && c2==='paper') || (c1==='paper' && c2==='rock')) return 'p1';
+            return 'p2';
+        }
+
+        function checkGameOver() {
+            // Sesuai aturan: selesai jika sisa 3 kartu
+            if(state.p1.total <= 3 || state.p2.total <= 3) {
+                const winner = state.p1.total > state.p2.total ? "PLAYER 1" : "PLAYER 2/BOT";
+                alert("PERMAINAN SELESAI! PEMENANGNYA: " + winner);
+                location.reload();
+            }
+            // Jika kartu di field habis tapi game belum selesai, isi lagi
+            if(state.p1.field.length === 0 || state.p2.field.length === 0) {
+                setupRound();
+            }
+        }
+
+        function showNotif(msg) {
+            const p = document.getElementById('popup');
+            p.innerText = msg;
+            p.style.display = 'block';
+            setTimeout(() => p.style.display = 'none', 1000);
+        }
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+    </script>
+</body>
+</html>
