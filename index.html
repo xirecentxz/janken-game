@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JANKEN HERO TACTICS 2026</title>
+    <title>JANKEN TACTICS 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -11,7 +11,6 @@
             --p2-color: #ff0058;
             --bg-dark: #0a0a0c;
             --glass: rgba(255, 255, 255, 0.05);
-            --neon-glow: 0 0 15px rgba(0, 210, 255, 0.3);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -22,282 +21,247 @@
             color: white;
             height: 100vh;
             overflow: hidden;
-            user-select: none;
+            display: flex; flex-direction: column;
         }
 
-        /* --- SCREENS --- */
+        /* --- HOW TO PLAY OVERLAY --- */
         .screen {
             position: fixed; inset: 0; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 100;
-            background: radial-gradient(circle at center, #161625 0%, #0a0a0c 100%);
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s;
+            align-items: center; justify-content: center; z-index: 1000;
+            background: rgba(10, 10, 12, 0.95);
+            transition: 0.5s;
         }
 
-        .screen.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+        .screen.hidden { opacity: 0; pointer-events: none; transform: scale(1.1); }
 
-        h1 { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; letter-spacing: 4px; color: var(--p1-color); text-shadow: var(--neon-glow); margin-bottom: 20px; }
-
-        .glass-card {
-            background: var(--glass); backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1); padding: 25px;
-            border-radius: 20px; text-align: center; max-width: 90%;
+        .how-to-card {
+            background: var(--glass); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 30px; border-radius: 20px; width: 90%; max-width: 450px;
+            text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
+
+        .how-to-card ul { text-align: left; margin: 20px 0; font-size: 0.95rem; line-height: 1.6; color: #ccc; }
+        .how-to-card span { color: var(--p1-color); font-weight: bold; }
 
         .btn {
-            padding: 15px 35px; border-radius: 50px; border: none;
+            padding: 15px 40px; border-radius: 50px; border: none;
             font-family: 'Orbitron', sans-serif; font-weight: bold;
-            cursor: pointer; transition: 0.3s; margin: 10px; text-transform: uppercase;
+            cursor: pointer; transition: 0.3s; text-transform: uppercase;
+            background: var(--p1-color); color: #000;
         }
 
-        .btn-p1 { background: var(--p1-color); color: #000; box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); }
-        .btn-p2 { background: var(--p2-color); color: #fff; box-shadow: 0 0 20px rgba(255, 0, 88, 0.4); }
-
-        /* --- GAME LAYOUT --- */
+        /* --- GAME GRID --- */
         .game-grid {
             display: grid; grid-template-rows: 1fr 100px 1fr;
-            height: 100vh; width: 100%;
+            height: 100vh; width: 100%; filter: blur(0px);
         }
 
-        .zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; position: relative; }
-        #p2-zone { transform: rotate(180deg); border-bottom: 1px solid rgba(255,0,88,0.2); }
-        #p1-zone { border-top: 1px solid rgba(0,210,255,0.2); }
+        .zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+        #p2-zone { transform: rotate(180deg); background: linear-gradient(0deg, rgba(255,0,88,0.05) 0%, transparent 100%); }
+        #p1-zone { background: linear-gradient(0deg, rgba(0,210,255,0.05) 0%, transparent 100%); }
 
-        .battle-info {
-            background: #111; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 5;
-            border-top: 2px solid #333; border-bottom: 2px solid #333;
+        .battle-center {
+            background: #111; border-top: 1px solid #333; border-bottom: 1px solid #333;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
         /* --- CARDS --- */
-        .field { display: flex; gap: 12px; }
+        .field { display: flex; gap: 10px; min-height: 110px; }
         
         .card {
-            width: 70px; height: 100px; border-radius: 10px;
+            width: 70px; height: 100px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; background: #1a1a1a; border: 2px solid #333;
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer; position: relative;
+            font-size: 2rem; background: #1a1a1e; border: 2px solid #444;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
-        .card.p1-side { border-color: var(--p1-color); box-shadow: inset 0 0 10px rgba(0,210,255,0.2); }
-        .card.p2-side { border-color: var(--p2-color); box-shadow: inset 0 0 10px rgba(255,0,88,0.2); }
+        .card.p1-active { border-color: var(--p1-color); box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); }
+        .card.p2-active { border-color: var(--p2-color); box-shadow: 0 0 15px rgba(255, 0, 88, 0.2); }
+        .card.selected { transform: translateY(-15px); border-width: 4px; box-shadow: 0 0 25px var(--p1-color); }
+        .card.hidden-card { background: #222; color: transparent; border-style: solid; }
 
-        .card.selected { transform: scale(1.1) translateY(-10px); border-width: 4px; box-shadow: 0 0 20px var(--p1-color); }
-        .card.hidden-card { background: repeating-linear-gradient(45deg, #222, #222 10px, #2a2a2a 10px, #2a2a2a 20px); color: transparent; }
+        .badge { font-size: 0.7rem; letter-spacing: 2px; opacity: 0.6; margin: 5px; }
+        #log-msg { font-weight: bold; color: var(--p1-color); text-align: center; padding: 5px; }
 
-        .status-tag { font-size: 0.8rem; letter-spacing: 2px; opacity: 0.7; font-weight: bold; }
-        
-        #log-text { font-size: 0.9rem; color: #00ffcc; text-align: center; padding: 0 10px; }
-
-        .floating-notif {
+        .pop-notif {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9); padding: 20px 40px; border-radius: 50px;
-            border: 2px solid gold; z-index: 200; pointer-events: none;
-            animation: popIn 0.5s forwards; display: none;
+            z-index: 2000; padding: 15px 30px; border-radius: 10px;
+            background: white; color: black; font-weight: bold;
+            display: none; animation: popAnim 0.8s ease-out;
         }
-
-        @keyframes popIn {
-            0% { transform: translate(-50%, -50%) scale(0); }
-            80% { transform: translate(-50%, -50%) scale(1.2); }
-            100% { transform: translate(-50%, -50%) scale(1); }
-        }
+        @keyframes popAnim { 0% { opacity:0; scale:0.5; } 50% { opacity:1; scale:1.2; } 100% { opacity:0; scale:1; } }
     </style>
 </head>
 <body>
 
-    <div id="popup" class="floating-notif">MENANG!</div>
+    <div id="pop" class="pop-notif">MENANG!</div>
 
-    <div id="screen-menu" class="screen">
-        <h1>JANKEN TACTICS</h1>
-        <div class="glass-card">
-            <p>6 Kartu per Deck | Strategi Blind Janken</p>
-            <div style="margin-top: 20px;">
-                <button class="btn btn-p1" onclick="initGame('pvp')">1 VS 1 (Lokal)</button>
-                <button class="btn btn-p2" onclick="initGame('bot')">Lawan BOT</button>
-            </div>
+    <div id="menu-screen" class="screen">
+        <div class="how-to-card">
+            <h1 style="color:var(--p1-color); font-family:'Orbitron'">JANKEN TACTICS</h1>
+            <ul>
+                <li><span>1. Deck:</span> Kamu punya 6 kartu (2x Batu, Gunting, Kertas).</li>
+                <li><span>2. Field:</span> 3 kartu akan selalu ada di meja selama stok masih ada.</li>
+                <li><span>3. Attack:</span> Klik kartumu, lalu klik kartu lawan untuk adu mekanik.</li>
+                <li><span>4. Win:</span> Pemainan selesai jika salah satu pemain sisa 3 kartu total.</li>
+            </ul>
+            <button class="btn" onclick="startGame('bot')">MAIN LAWAN BOT</button>
         </div>
     </div>
 
-    <div id="screen-game" class="game-grid">
+    <div id="game-ui" class="game-grid">
         <div id="p2-zone" class="zone">
-            <div class="status-tag" id="p2-label">PLAYER 2</div>
-            <div class="field" id="p2-field">
-                </div>
-            <div class="status-tag">SISA KARTU: <span id="p2-count">6</span></div>
+            <div class="badge">SISA DI TANGAN: <span id="p2-hand-count">3</span></div>
+            <div class="field" id="p2-field"></div>
+            <div class="badge" style="opacity:1">AI BOT</div>
         </div>
 
-        <div class="battle-info">
-            <div id="log-text">PILIH KARTUMU UNTUK MENYERANG!</div>
-            <div id="turn-indicator" style="font-weight: bold; margin-top: 5px; color: var(--p1-color);">GILIRAN P1</div>
+        <div class="battle-center">
+            <div id="log-msg">SIAP BERTEMPUR?</div>
+            <div id="turn-txt" class="badge" style="color:white; opacity:1">GILIRAN KAMU</div>
         </div>
 
         <div id="p1-zone" class="zone">
-            <div class="status-tag">SISA KARTU: <span id="p1-count">6</span></div>
-            <div class="field" id="p1-field">
-                </div>
-            <div class="status-tag">PLAYER 1</div>
+            <div class="badge" style="opacity:1">PLAYER 1</div>
+            <div class="field" id="p1-field"></div>
+            <div class="badge">SISA DI TANGAN: <span id="p1-hand-count">3</span></div>
         </div>
     </div>
 
     <script>
         const ICONS = { rock: '✊', paper: '✋', scissors: '✌️' };
         let state = {
-            mode: 'pvp',
-            turn: 'p1',
-            p1: { deck: ['rock','rock','paper','paper','scissors','scissors'], field: [], total: 6 },
-            p2: { deck: ['rock','rock','paper','paper','scissors','scissors'], field: [], total: 6 },
+            p1: { hand: ['rock','rock','paper','paper','scissors','scissors'], field: [] },
+            p2: { hand: ['rock','rock','paper','paper','scissors','scissors'], field: [] },
             selectedIdx: null,
-            isProcessing: false
+            isLocked: false
         };
 
-        function initGame(mode) {
-            state.mode = mode;
-            document.getElementById('screen-menu').classList.add('hidden');
-            if(mode === 'bot') document.getElementById('p2-label').innerText = "AI BOT";
-            setupRound();
+        function startGame() {
+            document.getElementById('menu-screen').classList.add('hidden');
+            // Shuffle awal
+            state.p1.hand = state.p1.hand.sort(() => Math.random() - 0.5);
+            state.p2.hand = state.p2.hand.sort(() => Math.random() - 0.5);
+            // Isi field pertama kali
+            refillField('p1');
+            refillField('p2');
+            render();
         }
 
-        function setupRound() {
-            // Sesuai aturan: Standby phase pilih 3 kartu (simulasi acak untuk awal)
-            state.p1.field = shuffle([...state.p1.deck]).slice(0, 3);
-            state.p2.field = shuffle([...state.p2.deck]).slice(0, 3);
-            renderField();
+        function refillField(p) {
+            while (state[p].field.length < 3 && state[p].hand.length > 0) {
+                state[p].field.push(state[p].hand.shift());
+            }
         }
 
-        function renderField() {
-            const p1Container = document.getElementById('p1-field');
-            const p2Container = document.getElementById('p2-field');
-            p1Container.innerHTML = ''; p2Container.innerHTML = '';
+        function render() {
+            const p1f = document.getElementById('p1-field');
+            const p2f = document.getElementById('p2-field');
+            p1f.innerHTML = ''; p2f.innerHTML = '';
 
-            // Render Player 1 (Face Up)
             state.p1.field.forEach((card, i) => {
-                const el = document.createElement('div');
-                el.className = `card p1-side ${state.selectedIdx === i ? 'selected' : ''}`;
-                el.innerText = ICONS[card];
-                el.onclick = () => selectCard(i);
-                p1Container.appendChild(el);
+                const div = document.createElement('div');
+                div.className = `card p1-active ${state.selectedIdx === i ? 'selected' : ''}`;
+                div.innerText = ICONS[card];
+                div.onclick = () => { if(!state.isLocked) { state.selectedIdx = i; render(); } };
+                p1f.appendChild(div);
             });
 
-            // Render Player 2 (Face Down/Hidden)
             state.p2.field.forEach((card, i) => {
-                const el = document.createElement('div');
-                el.className = `card p2-side hidden-card`;
-                el.innerText = '?';
-                el.onclick = () => attackTarget(i);
-                p2Container.appendChild(el);
+                const div = document.createElement('div');
+                div.className = `card p2-active hidden-card`;
+                div.innerText = '?';
+                div.onclick = () => { if(state.selectedIdx !== null) attack(i); };
+                p2f.appendChild(div);
             });
 
-            document.getElementById('p1-count').innerText = state.p1.total;
-            document.getElementById('p2-count').innerText = state.p2.total;
+            document.getElementById('p1-hand-count').innerText = state.p1.hand.length;
+            document.getElementById('p2-hand-count').innerText = state.p2.hand.length;
         }
 
-        function selectCard(i) {
-            if(state.turn !== 'p1' || state.isProcessing) return;
-            state.selectedIdx = i;
-            document.getElementById('log-text').innerText = "KARTU DIPILIH! SEKARANG PILIH KARTU LAWAN.";
-            renderField();
-        }
-
-        function attackTarget(targetIdx) {
-            if(state.selectedIdx === null || state.isProcessing) return;
-            state.isProcessing = true;
-            
+        function attack(targetIdx) {
+            state.isLocked = true;
             const p1Card = state.p1.field[state.selectedIdx];
             const p2Card = state.p2.field[targetIdx];
 
-            // Animasi Buka Kartu Lawan
-            const p2Cards = document.querySelectorAll('#p2-field .card');
-            p2Cards[targetIdx].classList.remove('hidden-card');
-            p2Cards[targetIdx].innerText = ICONS[p2Card];
+            // Animasi buka kartu lawan
+            const targets = document.querySelectorAll('#p2-field .card');
+            targets[targetIdx].classList.remove('hidden-card');
+            targets[targetIdx].innerText = ICONS[p2Card];
 
-            const result = getWinner(p1Card, p2Card);
+            const res = getWinner(p1Card, p2Card);
             
             setTimeout(() => {
-                resolveBattle(result, state.selectedIdx, targetIdx);
-            }, 1200);
-        }
-
-        function resolveBattle(result, sIdx, tIdx) {
-            if(result === 'p1') {
-                showNotif("P1 MENANG!");
-                state.p2.field.splice(tIdx, 1);
-                state.p2.total--;
-            } else if(result === 'p2') {
-                showNotif("P1 KALAH!");
-                state.p1.field.splice(sIdx, 1);
-                state.p1.total--;
-            } else {
-                showNotif("SERI!");
-            }
-
-            state.selectedIdx = null;
-            checkGameOver();
-            
-            if(state.mode === 'bot') {
-                state.isProcessing = true;
-                setTimeout(botTurn, 1500);
-            } else {
-                state.isProcessing = false;
-                renderField();
-            }
-        }
-
-        function botTurn() {
-            if(state.p2.field.length === 0) return;
-            const botIdx = Math.floor(Math.random() * state.p2.field.length);
-            const targetIdx = Math.floor(Math.random() * state.p1.field.length);
-            
-            const botCard = state.p2.field[botIdx];
-            const p1Card = state.p1.field[targetIdx];
-
-            document.getElementById('log-text').innerText = "BOT MENYERANG!";
-            
-            setTimeout(() => {
-                const res = getWinner(botCard, p1Card);
-                if(res === 'p1') { // Di sini p1 maksudnya penyerang (bot)
-                    state.p1.field.splice(targetIdx, 1);
-                    state.p1.total--;
-                    showNotif("BOT MENANG!");
-                } else if (res === 'p2') { // Bot kalah
-                    state.p2.field.splice(botIdx, 1);
-                    state.p2.total--;
-                    showNotif("BOT KALAH!");
+                if(res === 'p1') {
+                    state.p2.field.splice(targetIdx, 1);
+                    showPop("MENANG!");
+                } else if(res === 'p2') {
+                    state.p1.field.splice(state.selectedIdx, 1);
+                    showPop("KALAH!");
+                } else {
+                    showPop("SERI!");
                 }
                 
-                state.isProcessing = false;
+                state.selectedIdx = null;
+                refillField('p1'); refillField('p2');
+                render();
+                
+                // Giliran Bot
+                setTimeout(botMove, 1000);
+            }, 800);
+        }
+
+        function botMove() {
+            if(checkGameOver()) return;
+            document.getElementById('log-msg').innerText = "BOT BERPIKIR...";
+            
+            setTimeout(() => {
+                const bIdx = Math.floor(Math.random() * state.p2.field.length);
+                const tIdx = Math.floor(Math.random() * state.p1.field.length);
+                const bCard = state.p2.field[bIdx];
+                const pCard = state.p1.field[tIdx];
+
+                const res = getWinner(bCard, pCard);
+                if(res === 'p1') { // Bot menang
+                    state.p1.field.splice(tIdx, 1);
+                    showPop("BOT MENANG!");
+                } else if(res === 'p2') {
+                    state.p2.field.splice(bIdx, 1);
+                    showPop("BOT KALAH!");
+                }
+
+                refillField('p1'); refillField('p2');
+                render();
+                state.isLocked = false;
+                document.getElementById('log-msg').innerText = "GILIRANMU!";
                 checkGameOver();
-                renderField();
             }, 1000);
         }
 
         function getWinner(c1, c2) {
             if(c1 === c2) return 'draw';
-            if((c1==='rock' && c2==='scissors') || (c1==='scissors' && c2==='paper') || (c1==='paper' && c2==='rock')) return 'p1';
+            if((c1==='rock'&&c2==='scissors')||(c1==='scissors'&&c2==='paper')||(c1==='paper'&&c2==='rock')) return 'p1';
             return 'p2';
         }
 
         function checkGameOver() {
-            // Sesuai aturan: selesai jika sisa 3 kartu
-            if(state.p1.total <= 3 || state.p2.total <= 3) {
-                const winner = state.p1.total > state.p2.total ? "PLAYER 1" : "PLAYER 2/BOT";
-                alert("PERMAINAN SELESAI! PEMENANGNYA: " + winner);
+            const p1Total = state.p1.field.length + state.p1.hand.length;
+            const p2Total = state.p2.field.length + state.p2.hand.length;
+
+            if(p1Total <= 3 || p2Total <= 3) {
+                alert(`GAME OVER! ${p1Total > p2Total ? 'PLAYER 1' : 'BOT'} MENANG!`);
                 location.reload();
+                return true;
             }
-            // Jika kartu di field habis tapi game belum selesai, isi lagi
-            if(state.p1.field.length === 0 || state.p2.field.length === 0) {
-                setupRound();
-            }
+            return false;
         }
 
-        function showNotif(msg) {
-            const p = document.getElementById('popup');
-            p.innerText = msg;
-            p.style.display = 'block';
-            setTimeout(() => p.style.display = 'none', 1000);
-        }
-
-        function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
+        function showPop(m) {
+            const p = document.getElementById('pop');
+            p.innerText = m; p.style.display = 'block';
+            setTimeout(() => p.style.display = 'none', 800);
         }
     </script>
 </body>
